@@ -1,8 +1,8 @@
 Project:
-  ProjectName: pipeline   # change this.  must be lowercase only
+  ProjectName: patterns   # change this.  must be lowercase only
 
 Pipeline:
-  Account: '283923818425'
+  Account: '1111111111'
   Region: ap-southeast-2
   Source:
     S3:
@@ -18,7 +18,7 @@ Pipeline:
     #InstallCommand: 'npm install -g aws-cdk && pip install -r requirements.txt'
     #SynthCommand: 'cdk synth && cp cdk.json cdk.out'
     AdditionalPolicy:
-      - description: switch roles to targe accoutnts for synth
+      - description: switch roles to target accoutnts for synth
         actions:
         - sts:GetSessionToken
         - sts:AssumeRole
@@ -39,12 +39,12 @@ Pipeline:
 
 Deployment:  
   Dev:
-    AccountNumber: '259661075734'
+    AccountNumber: '2222222222'
     Region: ap-southeast-2
     VpcId: vpc-009c57a2240417688 
      
   Test:
-    AccountNumber: '748611154099'
+    AccountNumber: '33333333333333333333'
     Region: ap-southeast-2
     ManualApproval: True
     VpcId: vpc-0f9a93b6c73a8d039
