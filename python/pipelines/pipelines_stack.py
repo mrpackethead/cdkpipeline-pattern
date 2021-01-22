@@ -77,8 +77,6 @@ class PipelinesStack(core.Stack):
         
         synth_accounts = ''
 
-        #cdk-fudawl-cfn-exec-role-259661075734-ap-southeast-2
-
         profiles = open('.aws/config', 'w')
         for name, account in project_cfg['Deployment'].items():
             profiles.write(f'[profile {name}]\n')

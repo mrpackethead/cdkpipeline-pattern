@@ -2,7 +2,7 @@ Project:
   ProjectName: pipeline   # change this.  must be lowercase only
 
 Pipeline:
-  Account: '111111111111'
+  Account: '283923818425'
   Region: ap-southeast-2
   Source:
     S3:
@@ -39,12 +39,12 @@ Pipeline:
 
 Deployment:  
   Dev:
-    AccountNumber: '222222222222'
+    AccountNumber: '259661075734'
     Region: ap-southeast-2
     VpcId: vpc-009c57a2240417688 
      
   Test:
-    AccountNumber: '333333333333'
+    AccountNumber: '748611154099'
     Region: ap-southeast-2
     ManualApproval: True
     VpcId: vpc-0f9a93b6c73a8d039
