@@ -1,0 +1,18 @@
+{"AdditionalPolicy":
+    [
+        {"statement1": 
+            [
+            {"actions":["abc","def","ghi"]},
+            {"resources":["abc","def","ghi"]},
+            {"effect": "ALLOW",
+            ]
+        },
+        {"statement2": 
+            [
+            {"actions":["abc","def","ghi"]},
+            {"resources":["abc","def","ghi"]},
+            {"effect": "ALLOW",
+            ]
+        }
+    ] 
+}

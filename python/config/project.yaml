@@ -1,0 +1,43 @@
+Project:
+  ProjectName: pipeline   # change this.  must be lowercase only
+
+Pipeline:
+  Account: '111111111111'
+  Region: ap-southeast-2
+  Source:
+    S3:
+      BucketName: mphsourcebucket
+      IAMUser: myiamuser
+    #GitHub:    #TODO
+    #CodeCommit:
+    #  RepoName: mphsourcerepo
+    #  RepoDescription: Pipeline Repo
+    #  Branch: master
+
+  Synth:
+    InstallCommand: 'npm install -g aws-cdk && pip install -r requirements.txt'
+    SynthCommand: 'cdk synth && cp cdk.json cdk.out'
+    AdditionalPolicy:
+      - description: Permission to get a Docker Image from ECR
+        actions:
+        - ecr:GetAuthorizationToken
+        - ecr:GetDownloadUrlForLayer
+        - ecr:BatchGetImage
+        - ecr:BatchCheckLayerAvailability
+        effect: ALLOW
+        resources:  
+        - '*'
+    Environment:
+      Privileged: True      
+
+Deployment:  
+  Dev:
+    AccountNumber: '222222222222'
+    Region: ap-southeast-2
+    VpcId: vpc-009c57a2240417688 
+     
+  Test:
+    AccountNumber: '333333333333'
+    Region: ap-southeast-2
+    ManualApproval: True
+    VpcId: vpc-0f9a93b6c73a8d039
