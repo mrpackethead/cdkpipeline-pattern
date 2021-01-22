@@ -9,6 +9,8 @@ from aws_cdk import(
   pipelines
 )
 
+import json
+
 from application.application import ApplicationStage
 
 
@@ -64,9 +66,30 @@ class PipelinesStack(core.Stack):
                 run_order= 1
             )
         # Create the synth action. 
-
         
+        # build a set of profiles to use. ( will use the bootstrap role)
 
+
+        with open('cdk.json') as cdk_json:
+            cdk = json.load(cdk_json)
+
+        bootstrap = cdk['context']['@aws-cdk/core:bootstrapQualifier']
+        
+        synth_accounts = ''
+
+        #cdk-fudawl-cfn-exec-role-259661075734-ap-southeast-2
+
+        profiles = open('.aws/config', 'w')
+        for name, account in project_cfg['Deployment'].items():
+            profiles.write(f'[profile {name}]\n')
+            bootstrap_role = f"cdk-{bootstrap}-cfn-exec-role-{account['AccountNumber']}-{account['Region']}"
+            profiles.write(f"role_arn = arn:aws:iam::{account['AccountNumber']}:role/{bootstrap_role}\n")
+            profiles.write(f"region = {account['Region']}\n")
+            profiles.write(f"credential_source = Ec2InstanceMetadata\n")
+            profiles.write(f"\n") 
+            synth_accounts += ' && cdk synth --profile ' + name
+        profiles.close()
+ 
         pipeline_synth_cfg = project_cfg['Pipeline']['Synth']
     
         additional_policy = []
@@ -89,7 +112,7 @@ class PipelinesStack(core.Stack):
             source_artifact=source_artifact,    
             cloud_assembly_artifact=cloud_assembly_artifact,
             install_command='npm install -g aws-cdk && pip install -r requirements.txt',
-            synth_command ='cdk synth && cp cdk.json cdk.out',
+            synth_command = 'cdk synth' + synth_accounts + ' && cp cdk.json cdk.out',
             role_policy_statements = additional_policy,
             environment = codebuild.BuildEnvironment(
                 privileged = pipeline_synth_cfg['Environment']['Privileged']

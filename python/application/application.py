@@ -1,6 +1,7 @@
 from aws_cdk import(
     core,
     aws_ec2 as ec2,
+    aws_elasticloadbalancingv2 as elbv2
 )
 
 
@@ -21,3 +22,9 @@ class ApplicationStack(core.Stack):
         vpc = ec2.Vpc.from_lookup(self, 'vpc',
             vpc_id = vpc_id
         )
+
+        loadbalancer = elbv2.ApplicationLoadBalancer(self, 'loadbalancer',
+            vpc = vpc,
+            internet_facing = False
+        )
+

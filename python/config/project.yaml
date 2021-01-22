@@ -15,9 +15,16 @@ Pipeline:
     #  Branch: master
 
   Synth:
-    InstallCommand: 'npm install -g aws-cdk && pip install -r requirements.txt'
-    SynthCommand: 'cdk synth && cp cdk.json cdk.out'
+    #InstallCommand: 'npm install -g aws-cdk && pip install -r requirements.txt'
+    #SynthCommand: 'cdk synth && cp cdk.json cdk.out'
     AdditionalPolicy:
+      - description: switch roles to targe accoutnts for synth
+        actions:
+        - sts:GetSessionToken
+        - sts:AssumeRole
+        effect: ALLOW
+        resources:
+        - '*'
       - description: Permission to get a Docker Image from ECR
         actions:
         - ecr:GetAuthorizationToken
