@@ -11,48 +11,119 @@ from aws_cdk import(
 
 import json
 
-from application.application import ApplicationStage
-from application.constructs.multistagepipeline import MultiStagePipeline
 
-class PipelinesStack(core.Stack):
+class MultiStagePipeline(core.Construct):
 
-    def __init__(self, scope: core.Construct, id: str,  project_cfg: dict, **kwargs):
-        super().__init__(scope, id, **kwargs)
-
-
-        pipeline = MultiStagePipeline(self, 'MultistagePipeline',
-            project_cfg = project_cfg
-        )
+    def __init__(self, scope: core.Construct, id: str,  project_cfg: dict, *, prefix=None):
+        super().__init__(scope, id)
 
         project_name = project_cfg['Project']['ProjectName']
+        
 
-        deployment_cfg = project_cfg['Deployment']
-        for stage_name, stage_cfg in deployment_cfg.items():
+        # create a source for the pipeline 
+        pipeline_src_cfg = project_cfg['Pipeline']['Source']
 
-            Application = ApplicationStage(self, f'{project_name}{stage_name}',
-                env = core.Environment(
-                    account= str(stage_cfg['AccountNumber']),
-                    region= stage_cfg['Region']
-                ),
-                stage_name = stage_name,
-                project_name = project_name,
-                vpc_id = stage_cfg['VpcId']
+        source_artifact = codepipeline.Artifact()
+        cloud_assembly_artifact = codepipeline.Artifact()
+
+        if 'S3' in pipeline_src_cfg.keys():
+            self.s3_source_bucket = s3.Bucket(self,'S3sourcebucket',
+                bucket_name = pipeline_src_cfg['S3']['BucketName'],
+                versioned = True
+            )
+            pipeline_source_action = cpactions.S3SourceAction(
+                action_name="S3Source",
+                bucket=self.s3_source_bucket,
+                bucket_key="source/source.zip",
+                output=source_artifact,
+            )
+            if 'IAMUser' in pipeline_src_cfg['S3'].keys():
+                # create a user: Note you still need to give this user some credentials, via the console
+                # or CLI
+                self.s3_source_bucket_iam_user = iam.User(self, 's3iamaccount',
+                    user_name =  pipeline_src_cfg['S3']['IAMUser']
+                )
+                self.s3_source_bucket.grant_read_write(identity=self.s3_source_bucket_iam_user)
+
+        if 'GitHub' in pipeline_src_cfg.keys():  # TODO
+            print('do something')
+        
+        if 'CodeCommit' in pipeline_src_cfg.keys():
+
+            self.codecommit_source_repo = codecommit.Repository(self, project_name + 'codecommitrepo',
+                repository_name = pipeline_src_cfg['CodeCommit']['RepoName'],
+                description =  pipeline_src_cfg['CodeCommit']['RepoDescription'],
             )
 
-
-            if 'ManualApprove' in stage_cfg.keys():
-
-                this_stage = pipeline.pipeline.add_application_stage(
-                    app_stage = Application,
-                )
-
-                this_stage.add_manual_approval_action(
-                    action_name = 'Release_this_Stage',
-                    run_order = 1
-                )
+            pipeline_source_action = cpactions.CodeCommitSourceAction(
+                output = source_artifact,
+                repository = self.codecommit_source_repo,
+                branch = pipeline_src_cfg['CodeCommit']['Branch'],
+                trigger = cpactions.CodeCommitTrigger.EVENTS,
+                action_name = 'OnRepoevent',
+                run_order= 1
+            )
+        # Create the synth action. 
         
-            else:
-                pipeline.pipeline.add_application_stage(
-                    app_stage = Application,
+        # build a set of profiles to use. ( will use the bootstrap role)
+
+
+        with open('cdk.json') as cdk_json:
+            cdk = json.load(cdk_json)
+
+        bootstrap = cdk['context']['@aws-cdk/core:bootstrapQualifier']
+        
+        create_roles = ''
+        synth_accounts = ''
+
+        profiles = open('.aws/config', 'w')
+        for name, account in project_cfg['Deployment'].items():
+            bootstrap_role = f"cdk-{bootstrap}-cfn-exec-role-{account['AccountNumber']}-{account['Region']}"
+            create_roles += f" && aws configure set role_arn arn:aws:iam::{account['AccountNumber']}:role/{bootstrap_role} --profile {name}"
+            create_roles += f" && aws configure set region {account['Region']} --profile {name}"
+            create_roles += f" && aws configure set credential_source Ec2InstanceMetadata --profile {name}"
+
+            synth_accounts += f" && cdk synth --profile {name}"
+            
+        profiles.close()
+ 
+        
+
+        pipeline_synth_cfg = project_cfg['Pipeline']['Synth']
+    
+        additional_policy = []
+        if 'AdditionalPolicy' in pipeline_synth_cfg.keys():
+            for statement in pipeline_synth_cfg['AdditionalPolicy']:
+                if statement['effect'] == 'ALLOW':
+                    effect = iam.Effect.ALLOW
+                else:
+                    effect = iam.Effect.DENY
+
+                additional_policy.append(
+                    iam.PolicyStatement(
+                        actions = statement['actions'],
+                        resources = statement['resources'],
+                        effect = effect
+                    )
                 )
 
+        synth_action = pipelines.SimpleSynthAction(
+            source_artifact=source_artifact,    
+            cloud_assembly_artifact=cloud_assembly_artifact,
+            install_command='npm install -g aws-cdk && pip install -r requirements.txt' + create_roles,
+            synth_command = 'cdk synth' + synth_accounts + ' && cp cdk.json cdk.out',
+            role_policy_statements = additional_policy,
+            environment = codebuild.BuildEnvironment(
+                privileged = pipeline_synth_cfg['Environment']['Privileged']
+            )
+        )
+
+        self.pipeline = pipelines.CdkPipeline(self, project_name + 'cdkPipeline',
+            cloud_assembly_artifact = cloud_assembly_artifact,
+            pipeline_name = f'{project_name}pipeline',
+            source_action = pipeline_source_action,
+            synth_action = synth_action,
+            self_mutating = True,
+        )
+
+        

@@ -57,7 +57,7 @@ class MultiStagePipeline(core.Construct):
 
             pipeline_source_action = cpactions.CodeCommitSourceAction(
                 output = source_artifact,
-                repository = source_repo,
+                repository = self.codecommit_source_repo,
                 branch = pipeline_src_cfg['CodeCommit']['Branch'],
                 trigger = cpactions.CodeCommitTrigger.EVENTS,
                 action_name = 'OnRepoevent',

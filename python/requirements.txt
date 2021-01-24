@@ -1,1 +1,13 @@
--e .
+aws-cdk.core
+aws-cdk.aws-codepipeline
+aws-cdk.aws-codepipeline-actions
+aws-cdk.aws-codecommit
+aws-cdk.aws-s3
+aws-cdk.aws-iam
+aws-cdk.aws-codebuild
+aws-cdk.pipelines
+aws_ec2
+aws-cdk.aws-elasticloadbalancingv2
+PyYAML
+boto3
+botocore

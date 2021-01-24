@@ -2,12 +2,17 @@ Project:
   ProjectName: patterns   # change this.  must be lowercase only
 
 Pipeline:
-  Account: '1111111111'
+  Account: '111111111111'
   Region: ap-southeast-2
   Source:
-    S3:
-      BucketName: mphsourcebucket
-      IAMUser: myiamuser
+    CodeCommit:
+      RepoName: patterns
+      RepoDescription: pipeline patterns test
+      Branch: master
+
+    #S3:
+    #  BucketName: mphsourcebucket
+    #  IAMUser: myiamuser
     #GitHub:    #TODO
     #CodeCommit:
     #  RepoName: mphsourcerepo
@@ -39,12 +44,12 @@ Pipeline:
 
 Deployment:  
   Dev:
-    AccountNumber: '2222222222'
+    AccountNumber: '222222222222'
     Region: ap-southeast-2
-    VpcId: vpc-009c57a2240417688 
+    VpcId: vpc-009xxxxxxxxxxx 
      
   Test:
-    AccountNumber: '33333333333333333333'
+    AccountNumber: '333333333333'
     Region: ap-southeast-2
     ManualApproval: True
-    VpcId: vpc-0f9a93b6c73a8d039
+    VpcId: vpc-0099xxxxxxxxxxxxx
